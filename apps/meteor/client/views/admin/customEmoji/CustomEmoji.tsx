@@ -95,7 +95,6 @@ const CustomEmoji: FC<CustomEmojiProps> = ({ onClick, reload }) => {
 											<Box withTruncatedText>{emojis.name}</Box>
 										</GenericTableCell>
 										<GenericTableCell color='default'>
-											<!-- concatenate array with commas to render all elements -->
 											<Box withTruncatedText>{emojis.aliases.join(', ')}</Box>
 										</GenericTableCell>
 									</GenericTableRow>
