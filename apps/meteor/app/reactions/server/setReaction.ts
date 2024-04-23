@@ -14,13 +14,28 @@ import { hasPermissionAsync } from '../../authorization/server/functions/hasPerm
 import { emoji } from '../../emoji/server';
 import { isTheLastMessage } from '../../lib/server/functions/isTheLastMessage';
 
-const removeUserReaction = (message: IMessage, reaction: string, username: string) => {
+//SHould use userID in reaction removal
+const removeUserReaction = (message: IMessage, reaction: string, userID: string) => {
 	if (!message.reactions) {
 		return message;
 	}
+	
+	//create reactObj variable for readability
+	const reactObj = message.reactions[reaction];
+	if (!reactObj || !reactObj.userIds){
+		//reaction not associated to any IDs, simply return
+		return message;
+	}
+	
+	//Get index of user's ID
+	const userIdIndex = reactObj.userIds.indexOf(userID);
+	if (userIdIndex != -1){
+		//remove ID from the array.
+		reactObj.userIds.splice(userIdIndex, 1);
+	}
 
-	message.reactions[reaction].usernames.splice(message.reactions[reaction].usernames.indexOf(username), 1);
-	if (message.reactions[reaction].usernames.length === 0) {
+	if (reactObj.userIds.length == 0) {
+		//If no IDs are left, remove the reaction entirely
 		delete message.reactions[reaction];
 	}
 	return message;
@@ -52,10 +67,13 @@ async function setReaction(room: IRoom, user: IUser, message: IMessage, reaction
 	// 	return;
 	// }
 	//Need to change something here for unique reactions, probably
+	const userID = user._id;
+
 	const userAlreadyReacted =
 		message.reactions &&
 		Boolean(message.reactions[reaction]) &&
-		message.reactions[reaction].usernames.indexOf(user.username as string) !== -1;
+		//Check if user's ID is in the stored array of user ID's
+		message.reactions[reaction].userIds.indexOf(userID) !== -1;
 	
 		// When shouldReact was not informed, toggle the reaction.
 	if (shouldReact === undefined) {
@@ -67,10 +85,12 @@ async function setReaction(room: IRoom, user: IUser, message: IMessage, reaction
 	}
 
 	let isReacted;
-
+	
+	//Removes reaction if user has already reacted
 	if (userAlreadyReacted) {
 		const oldMessage = JSON.parse(JSON.stringify(message));
-		removeUserReaction(message, reaction, user.username as string);
+		//pass user's ID to reaction removal
+		removeUserReaction(message, reaction, userID);
 		if (_.isEmpty(message.reactions)) {
 			delete message.reactions;
 			if (isTheLastMessage(room, message)) {
@@ -93,10 +113,11 @@ async function setReaction(room: IRoom, user: IUser, message: IMessage, reaction
 		}
 		if (!message.reactions[reaction]) {
 			message.reactions[reaction] = {
-				usernames: [],
+				userIds: [], //now store UserIds
 			};
 		}
-		message.reactions[reaction].usernames.push(user.username as string);
+		//Push userId instead of username
+		message.reactions[reaction].usernames.push(userID);
 		await Messages.setReactions(message._id, message.reactions);
 		if (isTheLastMessage(room, message)) {
 			await Rooms.setReactionsInLastMessage(room._id, message.reactions);
