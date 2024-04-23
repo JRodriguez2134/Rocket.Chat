@@ -1083,6 +1083,7 @@ API.v1.addRoute(
 			});
 
 			const [members, total] = await Promise.all([cursor.toArray(), totalCount]);
+			// sort the list alphabetically using built-in sort method and localeCompare
 			members.sort((a: { username: string; },b: { username: string; }) => a.username.localeCompare(b.username));
 			console.log("**********");
 			console.log(members);
