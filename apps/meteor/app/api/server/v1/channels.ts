@@ -1083,7 +1083,10 @@ API.v1.addRoute(
 			});
 
 			const [members, total] = await Promise.all([cursor.toArray(), totalCount]);
-
+			members.sort((a: { username: string; },b: { username: string; }) => a.username.localeCompare(b.username));
+			console.log("**********");
+			console.log(members);
+			console.log("**********");
 			return API.v1.success({
 				members,
 				count: members.length,
